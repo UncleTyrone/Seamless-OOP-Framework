@@ -6,46 +6,71 @@ Complete API reference for the Seamless OOP Framework framework.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Library API](#library-api)
-3. [Component System](#component-system)
-4. [ModuleHandler](#modulehandler)
-5. [Examples](#examples)
+2. [Architecture Overview](#architecture-overview)
+3. [Library API](#library-api)
+4. [Component System](#component-system)
+5. [ModuleHandler](#modulehandler)
+6. [Examples](#examples)
+7. [Best Practices](#best-practices)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Getting Started
 
 ### Installation
-Place the Seamless OOP Framework in your Roblox project structure:
+The Seamless OOP Framework is structured for both Server and Client environments:
 
+**Server Structure:**
 ```
-ReplicatedStorage/
-└── Seamless OOP Framework/
-    ├── Library.lua
-    ├── ModuleHandler.lua
+ServerScriptService/
+└── SeamlessOOPFramework_Server/
+    ├── Library.luau
+    ├── ModuleHandler.server.luau
     └── Components/
-        └── Component.lua (template)
+        └── Component.luau (template)
+```
+
+**Client Structure:**
+```
+StarterPlayer/StarterPlayerScripts/
+└── SeamlessOOPFramework_Client/
+    ├── Library.luau
+    ├── ModuleHandler.client.luau
+    └── Components/
+        └── Component.luau (template)
 ```
 
 ### Basic Setup
-The ModuleHandler automatically initializes the framework. You can utilize each component through its "Init()" method that runs at runtime!
+The ModuleHandler automatically initializes the framework. Simply place your component ModuleScripts in the `Components` folder, and they will be automatically loaded, registered, and initialized. Each component's `Init()` method runs on a separate thread at runtime.
+
+---
+
+## Architecture Overview
+
+The Seamless OOP Framework operates on both the **Server** and **Client** with separate instances:
+
+- **Server Library**: Core utilities for server-side operations (connections, threads, player attributes, etc.)
+- **Client Library**: All server features plus GUI animation methods (`Animate`, `Fade`, `InitializeFade`)
+
+Both environments share the same component system architecture, allowing seamless code reuse across server and client.
 
 ---
 
 ## Library API
-The Seamless OOP Framework Library provides utility functions for animations, connections, threads, and more.
+The Seamless OOP Framework Library provides utility functions for connections, threads, player management, and more. The Client Library includes additional GUI animation capabilities.
 
 ### Properties
 
 #### `Library.Version`
 - **Type:** `string`
 - **Description:** Current version of Seamless OOP Framework
-- **Example:** `"1.0.0"`
+- **Example:** `"1.2.0"`
 
 #### `Library.Authors`
 - **Type:** `string`
 - **Description:** Framework authors
-- **Example:** `"Vanguard, UncleTyrone"`
+- **Example:** `"UncleTyrone, Vanguard"`
 
 #### `Library.Debug`
 - **Type:** `boolean`
@@ -211,27 +236,29 @@ end))
 
 ---
 
-### `Library:Animate(Object, Duration, PropertyString, GoalValue, Boolean, EasingStyle, EasingDirection)`
-Animates a GUI object property.
+### `Library:Animate(Object, Duration, PropertyString, GoalValue, Boolean?, EasingStyle?, EasingDirection?)`
+Animates a GUI object property. **Client-only method.**
 
 **Parameters:**
 - `Object` (`GuiObject`) - The GUI object to animate
 - `Duration` (`number`) - Animation duration in seconds
 - `PropertyString` (`string`) - Property to animate (e.g., "BackgroundTransparency")
-- `GoalValue` (`any`) - Target value for the property
+- `GoalValue` (`Color3 | UDim2 | number | string`) - Target value for the property
 - `Boolean` (`boolean?`) - Whether to autoplay (optional, defaults to `true`)
-- `EasingStyle` (`Enum.EasingStyle?`) - Easing style (optional, defaults to `Sine`)
-- `EasingDirection` (`Enum.EasingDirection?`) - Easing direction (optional, defaults to `In`)
+- `EasingStyle` (`Enum.EasingStyle?`) - Easing style (optional, defaults to `Enum.EasingStyle.Sine`)
+- `EasingDirection` (`Enum.EasingDirection?`) - Easing direction (optional, defaults to `Enum.EasingDirection.In`)
 
 **Returns:**
-- `Tween?` - The created tween (if autoplay is false)
+- `Tween?` - The created tween (if autoplay is `false`), otherwise `nil`
+
+**Note:** This method is only available in the Client Library. The Server Library does not include animation methods.
 
 **Example:**
 ```lua
--- Fade out a frame
-Library:Animate(frame, 0.5, "BackgroundTransparency", 1, true)
+-- Fade out a frame (autoplay defaults to true)
+Library:Animate(frame, 0.5, "BackgroundTransparency", 1)
 
--- Animate size
+-- Animate size with custom easing
 Library:Animate(
     button,
     1.0,
@@ -257,8 +284,7 @@ tween:Play()
 ---
 
 ### `Library:Fade(Object, Path, Duration)`
-Fades a GUI object and all its descendants in or out.
-Make sure you run :InitializeFade() on a frame object to store its properties PRIOR to attempting to :Fade() the object!
+Fades a GUI object and all its descendants in or out. **Client-only method.**
 
 **Parameters:**
 - `Object` (`GuiObject`) - The root GUI object
@@ -266,8 +292,17 @@ Make sure you run :InitializeFade() on a frame object to store its properties PR
 - `Duration` (`number`) - Animation duration in seconds
 
 **Path Options:**
-- `"Out"` - Fades out the object
-- `"In"` - Fades in the object (restores original properties)
+- `"Init"` - Initializes fade by storing original properties and fading out (used internally by `InitializeFade`)
+- `"Out"` - Fades out the object and all descendants
+- `"In"` - Fades in the object (restores original properties stored during initialization)
+
+**Note:** This method is only available in the Client Library. It automatically handles different GUI object types:
+- **Frames/ScrollingFrames**: Animates `BackgroundTransparency`
+- **Text objects** (TextBox, TextButton, TextLabel): Animates `TextTransparency` and `BackgroundTransparency`
+- **Image objects** (ImageLabel, ImageButton, ViewportFrame): Animates `ImageTransparency` and `BackgroundTransparency`
+- **UIStrokes**: Animates `Transparency`
+
+**Important:** You must call `Library:InitializeFade()` on a frame object to store its properties **before** attempting to fade it in or out.
 
 **Example:**
 ```lua
@@ -284,13 +319,19 @@ Library:Fade(myFrame, "In", 0.5)
 ---
 
 ### `Library:InitializeFade(Object)`
-Initializes fade properties for an object (stores originals and fades out).
+Initializes fade properties for an object by storing original transparency values and immediately fading out. **Client-only method.**
 
 **Parameters:**
 - `Object` (`GuiObject`) - The GUI object to initialize
 
+**Returns:**
+- `nil`
+
+**Note:** This method is only available in the Client Library. It internally calls `Library:Fade(Object, "Init", 0)` to store original properties and hide the object instantly.
+
 **Example:**
 ```lua
+-- Initialize (store properties and hide immediately)
 Library:InitializeFade(menuFrame)
 -- Object is now invisible with properties stored
 -- Use Fade("In", duration) to restore
@@ -357,10 +398,60 @@ print(time.Minutes) -- 0
 ---
 
 ## Component System
-The Seamless OOP Framework uses a modular component system that automatically loads and initializes components.
+The Seamless OOP Framework uses a modular component system that automatically loads and initializes components. Components work identically on both Server and Client.
+
+### Component Lifecycle
+
+Components go through three phases in order:
+
+1. **Register** - Component is registered in the global registry
+2. **Setup** - Component initializes and validates dependencies
+3. **Init** - Component starts its runtime behavior (runs on separate thread)
+
+### Component Structure
+
+Every component must be a ModuleScript that returns a table with these methods:
+
+```lua
+local Component = {}
+
+-- Required: Called automatically by ModuleHandler
+function Component:Register(Registry)
+    self.Registry = Registry
+end
+
+-- Required: Called automatically by ModuleHandler
+-- Must return true on success, false on failure
+function Component:Setup()
+    -- Initialize library (injected by ModuleHandler)
+    if self.Library then
+        Library = self.Library
+    else
+        return false
+    end
+    
+    -- Initialize registry
+    if self.Registry then
+        for Name, Component in pairs(self.Registry) do
+            Components[Name] = Component
+        end
+    else
+        return false
+    end
+    
+    return true
+end
+
+-- Optional: Called automatically by ModuleHandler on separate thread
+function Component:Init()
+    -- Your runtime code here
+end
+
+return Component
+```
 
 ### Component Communication
-Components can access each other through the `Components` table:
+Components can access each other through the `Components` table after `Setup()` completes:
 
 ```lua
 function MyComponent:Init() -- Run your code on the runtime thread.
@@ -371,7 +462,7 @@ end
 ```
 
 ### Importing Component Types
-To type-check component interactions, use type imports, an example can be found at the top of the provided component or below:
+To enable type-checking and autocomplete for component interactions, use type imports:
 
 ```lua
 ------------------ IMPORT COMPONENTS : ------------------
@@ -387,49 +478,78 @@ type ComponentTypes = {
 local Components = ({} :: any) :: ComponentTypes
 ```
 
+### Component Properties
+
+After `Setup()` is called, components have access to:
+
+- `self.Library` - The Library instance (injected by ModuleHandler)
+- `self.Registry` - The global component registry (injected by ModuleHandler)
+- `Component.Library` - Library exposed on component for external access (set during Setup)
+
 ---
 
 ## ModuleHandler
-The ModuleHandler automatically loads and initializes all components in the `Components` folder.
+The ModuleHandler automatically loads and initializes all components in the `Components` folder. There are separate handlers for Server (`ModuleHandler.server.luau`) and Client (`ModuleHandler.client.luau`), but they function identically.
 
 ### How It Works
 
-1. **Library Setup** - Loads and initializes the Library
-2. **Component Discovery** - Finds all ModuleScripts in the Components folder
-3. **Component Registration** - Calls `Register()` on each component
-4. **Component Setup** - Calls `Setup()` on each component
-5. **Component Init** - Spawns threads to call `Init()` on each component
-6. **Cleanup** - Automatically cancels all threads on game close
+The ModuleHandler follows this sequence:
+
+1. **Library Loading** - Requires and validates the Library module
+2. **Library Setup** - Calls `Library:Setup()` to initialize the framework
+3. **Library Init** - Calls `Library:Init()` to set up cleanup handlers
+4. **Component Discovery** - Finds all ModuleScripts in the Components folder
+5. **Component Loading** - Requires each component with error handling
+6. **Component Registration** - Injects Library into each component and calls `Register(Registry)` on each
+7. **Component Setup** - Calls `Setup()` on each component sequentially
+8. **Component Init** - Spawns separate threads to call `Init()` on each component
+9. **Cleanup** - Automatically cancels all Init threads on game close
 
 ### Automatic Loading
 Simply place ModuleScripts in the Components folder:
 
 ```
-Seamless OOP Framework/
-├── Library.lua
-├── ModuleHandler.lua
+SeamlessOOPFramework_Server/ (or _Client)
+├── Library.luau
+├── ModuleHandler.server.luau (or .client.luau)
 └── Components/
-    ├── Component.lua
-    ├── MyComponent.lua      -- Automatically loaded
-    └── AnotherComponent.lua -- Automatically loaded
+    ├── Component.luau (template)
+    ├── MyComponent.luau      -- Automatically loaded
+    └── AnotherComponent.luau -- Automatically loaded
 ```
 
 ### Error Handling
-ModuleHandler uses `pcall` to handle errors gracefully. Failed components will output warnings but won't crash the system.
+ModuleHandler uses `pcall` to handle errors gracefully:
+
+- **Component loading errors**: Warns but continues with other components
+- **Component setup failures**: Warns and skips initialization if `Setup()` returns `false`
+- **Component init errors**: Errors are caught per-thread, won't crash other components
+
+### Debug Output
+
+When `Library.Debug` is `true` (default), the ModuleHandler will:
+- Print success messages for each component that loads: `"Module [Name] has successfully loaded!"`
+- Warn about components that fail to load or initialize
+
+### Thread Management
+
+- Each component's `Init()` method runs on its own separate thread
+- All Init threads are tracked and automatically cancelled when the game closes
+- This allows components to run concurrently without blocking each other
 
 ---
 
 ## Examples
 
-### Example 1: Basic Animation
+### Example 1: Basic Animation (Client Only)
 
 ```lua
-local Library = require(Parent.Library)
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
--- Fade out a frame
-Library:Animate(myFrame, 0.5, "BackgroundTransparency", 1, true)
+-- Fade out a frame (autoplay defaults to true)
+Library:Animate(myFrame, 0.5, "BackgroundTransparency", 1)
 
--- Animate position
+-- Animate position with custom easing
 Library:Animate(
     button,
     1.0,
@@ -441,38 +561,39 @@ Library:Animate(
 )
 ```
 
-### Example 2: Fade System
+### Example 2: Fade System (Client Only)
 
 ```lua
-local Library = require(Parent.Library)
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
--- Initialize (store properties and hide)
+-- Initialize (store properties and hide immediately)
 Library:InitializeFade(menuFrame)
 
--- Later, fade in
+-- Later, fade in (restores original properties)
 Library:Fade(menuFrame, "In", 0.5)
 
--- Fade out
+-- Fade out again
 Library:Fade(menuFrame, "Out", 0.3)
 ```
 
-### Example 3: Connection Management
+### Example 3: Connection Management (Server & Client)
 
 ```lua
-local Library = require(Parent.Parent:WaitForChild('Library'))
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
 -- Track a connection (auto-cleanup on game close)
 local connection = button.MouseButton1Click:Connect(function()
     print("Button clicked!")
 end)
 
-Library:Connection(connection)
+local connectionId = Library:Connection(connection)
+-- Connection will be automatically disconnected when game closes
 ```
 
-### Example 4: Thread Management
+### Example 4: Thread Management (Server & Client)
 
 ```lua
-local Library = require(Parent.Parent:WaitForChild('Library'))
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
 -- Track a thread (auto-cancel on game close)
 local thread = task.spawn(function()
@@ -488,12 +609,12 @@ local threadId = Library:Thread(thread)
 Library:CancelThread(threadId)
 ```
 
-### Example 5: Player Attribute Monitoring
+### Example 5: Player Attribute Monitoring (Server & Client)
 
 ```lua
-local Library = require(Parent.Parent:WaitForChild('Library'))
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
-local player = game.Players.LocalPlayer
+local player = game.Players.LocalPlayer -- or game.Players:GetPlayerByUserId()
 
 -- Monitor level changes
 local signal = Library:AttributeSignal(player, "Level")
@@ -503,23 +624,28 @@ Library:Connection(signal:Connect(function()
 end))
 ```
 
-### Example 6: Profile Picture Display
+### Example 6: Profile Picture Display (Server & Client)
 
 ```lua
-local Library = require(Parent.Parent:WaitForChild('Library'))
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
 local player = game.Players.LocalPlayer
 local imageLabel = script.Parent
 
--- Load profile picture
+-- Load profile picture using Player instance
 local thumbnail = Library:GetPfp(player, Enum.ThumbnailSize.Size150x150)
-imageLabel.Image = thumbnail
+if thumbnail then
+    imageLabel.Image = thumbnail
+end
+
+-- Or using UserId
+local thumbnail2 = Library:GetPfp(123456789, Enum.ThumbnailSize.Size150x150)
 ```
 
-### Example 7: Time Conversion
+### Example 7: Time Conversion (Server & Client)
 
 ```lua
-local Library = require(Parent.Parent:WaitForChild('Library'))
+local Library = require(Parent.Parent:WaitForChild("Library"))
 
 local totalMinutes = 1500 -- 25 hours
 local time = Library:ConvertToTime(totalMinutes)
@@ -532,40 +658,114 @@ print(string.format("%d days, %d hours, %d minutes",
 -- Output: "1 days, 1 hours, 0 minutes"
 ```
 
+### Example 8: Creating a Component
+
+```lua
+-- MyComponent.luau in Components folder
+local Component = {}
+
+-- Import other components for type checking
+type OtherComponent = typeof(require(script.Parent:WaitForChild("OtherComponent")))
+
+type ComponentTypes = {
+    OtherComponent: OtherComponent,
+}
+
+local Components = ({} :: any) :: ComponentTypes
+local Library = ({} :: any)
+
+function Component:Register(Registry)
+    self.Registry = Registry
+end
+
+function Component:Setup()
+    -- Library is injected by ModuleHandler
+    if self.Library then
+        Library = self.Library
+    else
+        return false
+    end
+    
+    -- Registry is injected by ModuleHandler
+    if self.Registry then
+        for Name, Component in pairs(self.Registry) do
+            Components[Name] = Component
+        end
+    else
+        return false
+    end
+    
+    return true
+end
+
+function Component:Init()
+    -- Access other components
+    if Components.OtherComponent then
+        Components.OtherComponent:SomeMethod()
+    end
+    
+    -- Use library services
+    local player = Library.Players.LocalPlayer
+    print("Component initialized for", player.Name)
+end
+
+return Component
+```
+
 ---
 
 ## Best Practices
 
-1. **Always use `Library:Connection()`** for event connections to ensure cleanup
-2. **Use `Library:Thread()`** for long-running tasks
-3. **Initialize fades before showing UI** to enable smooth transitions
-4. **Return `true` from `Setup()`** only when initialization succeeds
-5. **Access other components in `Init()`** after all components are loaded
-6. **Use type definitions** for better code completion and error detection
+1. **Always use `Library:Connection()`** for event connections to ensure automatic cleanup on game close
+2. **Use `Library:Thread()`** for long-running tasks that need to be cancelled on cleanup
+3. **Initialize fades before showing UI** - Call `InitializeFade()` during setup, then use `Fade("In", duration)` when showing
+4. **Return `true` from `Setup()`** only when initialization succeeds - Return `false` to prevent the component from initializing
+5. **Access other components in `Init()`** - All components are guaranteed to be registered and set up before `Init()` is called
+6. **Use type definitions** for component imports to enable autocomplete and type checking
+7. **Handle Library injection** - Always check if `self.Library` exists in `Setup()` before using it
+8. **Client vs Server** - Remember that animation methods (`Animate`, `Fade`, `InitializeFade`) are only available on the Client
+9. **Error handling** - Use `pcall` for risky operations in `Init()` since it runs on a separate thread
+10. **Component communication** - Access other components through the `Components` table, not through direct requires
 
 ---
 
 ## Troubleshooting
 
 ### Component not loading?
-- Check that it's a ModuleScript in the Components folder
-- Ensure `Setup()` returns `true` on success
-- Check for errors in the Output window
+- **Check file type**: Ensure it's a ModuleScript (not a regular Script) in the Components folder
+- **Check Setup()**: Ensure `Setup()` returns `true` on success, `false` on failure
+- **Check Output**: Look for warnings in the Output window - ModuleHandler will warn about failed components
+- **Check Library injection**: Verify `self.Library` exists in `Setup()` - it's injected automatically by ModuleHandler
+- **Check Registry**: Verify `self.Registry` exists in `Setup()` - it's injected automatically
 
-### Animations not working?
-- Verify the GUI object exists and is a valid GuiObject
-- Check that properties are spelled correctly
-- Ensure the object is visible before animating
+### Animations not working? (Client Only)
+- **Verify environment**: Animation methods are only available in the Client Library
+- **Check object type**: Verify the GUI object exists and is a valid GuiObject
+- **Check property names**: Ensure properties are spelled correctly (case-sensitive)
+- **Check InitializeFade**: For fade operations, ensure `InitializeFade()` was called first
+- **Check visibility**: Some animations may not work if the object is not visible
 
 ### Connections not cleaning up?
-- Use `Library:Connection()` to track connections
-- Check that `Library:Init()` was called (automatic via ModuleHandler)
+- **Use Library:Connection()**: Always track connections with `Library:Connection()` for automatic cleanup
+- **Check Library:Init()**: Verify `Library:Init()` was called (automatic via ModuleHandler)
+- **Check game.Close**: Cleanup happens on `game.Close` event - ensure this fires properly
+
+### Threads not cancelling?
+- **Use Library:Thread()**: Track threads with `Library:Thread()` for automatic cancellation
+- **Manual cancellation**: Use `Library:CancelThread(threadId)` if you need to cancel before game close
+- **Check thread ID**: Ensure you're using the correct thread ID returned by `Library:Thread()`
+
+### Components can't access each other?
+- **Check Setup()**: Ensure all components return `true` from `Setup()` - failed components won't be in the registry
+- **Check Init() timing**: Access other components in `Init()`, not in `Setup()` - all components are set up before any `Init()` runs
+- **Check component names**: Component names in the registry match the ModuleScript name
+- **Check type imports**: Use proper type imports for autocomplete and type checking
 
 ---
 
 ## Version
-Current Version: **1.1.0**
+Current Version: **1.2.0**
 
 ---
 
-**Made with ❤️ by Vanguard & UncleTyrone**
+**Made with ❤️ by UncleTyrone & Vanguard**
