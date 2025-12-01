@@ -3,8 +3,8 @@ type Script = LuaSourceContainer
 local Parent = script.Parent :: Instance
 
 -- Establish component modules
-local Components = Parent:WaitForChild('Components')
-local Library = require(Parent:WaitForChild('Library'))
+local Components = Parent:WaitForChild("Components")
+local Library = require(Parent:WaitForChild("Library"))
 local Tasks = {}
 local Registry = {}
 
@@ -14,8 +14,7 @@ local function RegisterModule(Module, RequiredModule)
 end
 
 -- Handle every component module
-local function HandleModule(Module : ModuleScript)
-
+local function HandleModule(Module: ModuleScript)
 	local Success, ErrorMessage = pcall(function()
 		-- Require component
 		local RequiredModule = require(Module)
@@ -24,12 +23,12 @@ local function HandleModule(Module : ModuleScript)
 			-- Register module
 			RegisterModule(Module, RequiredModule)
 		else
-			warn("Failed to require source for module", Module.Name.. "!")
+			warn("Failed to require source for module", Module.Name .. "!")
 		end
 	end)
 
 	if not Success and ErrorMessage then
-		warn('Seamless OOP Framework | ' .. Module.Name .. ' failed: ' .. ErrorMessage)
+		warn("Seamless OOP Framework | " .. Module.Name .. " failed: " .. ErrorMessage)
 	end
 end
 
@@ -43,7 +42,7 @@ if Library then
 
 		-- Require all component modules and pass to function
 		for Index, Component in pairs(Components:GetChildren()) do
-			if Component:IsA('ModuleScript') then
+			if Component:IsA("ModuleScript") then
 				HandleModule(Component)
 			end
 		end

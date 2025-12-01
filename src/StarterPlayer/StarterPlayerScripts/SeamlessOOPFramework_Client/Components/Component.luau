@@ -3,16 +3,15 @@
 -- Establish types
 type Script = LuaSourceContainer
 local Parent = script.Parent :: Instance
-type LibraryModule = typeof(require(Parent.Parent:WaitForChild('Library')))
+type LibraryModule = typeof(require(Parent.Parent:WaitForChild("Library")))
 
 -- Establish local component
 local Component = {}
 
-
 ------------------ IMPORT COMPONENTS : ------------------
 
 -- Example for importing a component:
-type TestComponent = typeof(require(Parent:WaitForChild('Component')))
+type TestComponent = typeof(require(Parent:WaitForChild("Component")))
 
 type ComponentTypes = {
 	-- Example for importing a component:
@@ -21,10 +20,9 @@ type ComponentTypes = {
 
 ------------------ END IMPORT ! ------------------
 
-
 -- Initialize library and components
 local Components = ({} :: any) :: ComponentTypes
-local Library =	({} :: any) :: LibraryModule
+local Library = ({} :: any) :: LibraryModule
 
 -- Component:Register() is ran automatically for all loaded components
 function Component:Register(Registry)
@@ -37,7 +35,7 @@ function Component:Setup()
 		Library = self.Library
 		Component.Library = Library -- Expose Library on component for external access
 	else
-		warn('Failed to load Seamless OOP Frameork!')
+		warn("Failed to load Seamless OOP Frameork!")
 
 		-- Inform core handler of initialization failure
 		return false
@@ -49,7 +47,7 @@ function Component:Setup()
 			Components[Name] = Component
 		end
 	else
-		warn("Failed to register component", script.Name.. "!")
+		warn("Failed to register component", script.Name .. "!")
 
 		-- Inform core handler of initialization failure
 		return false
