@@ -1,0 +1,7 @@
+{
+  "className": "StarterGui",
+  "properties": {
+    "ScreenOrientation": "Sensor"
+  },
+  "keepUnknowns": true
+}

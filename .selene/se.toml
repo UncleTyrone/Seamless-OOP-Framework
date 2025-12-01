@@ -1,0 +1,5 @@
+[globals]
+game = { read_only = true }
+workspace = { read_only = true }
+require = { read_only = true }
+script = { read_only = true }

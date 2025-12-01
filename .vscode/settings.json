@@ -1,0 +1,16 @@
+{
+    "luau-lsp.sourcemap.rojoProjectFile": "SeamlessOOPFramework.project.json",
+    "luau-lsp.sourcemap.autogenerate": false,
+    "luau-lsp.sourcemap.enabled": true,
+    "luau-lsp.plugin.enabled": true,
+    "luau-lsp.plugin.port": 3667,
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "notebook.defaultFormatter": "JohnnyMorganz.stylua",
+    "editor.defaultFormatter": "JohnnyMorganz.stylua",
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "argon.autoRun": true,
+    "argon.autoLaunchStudio": true
+}

@@ -1,0 +1,7 @@
+{
+  "className": "Decal",
+  "properties": {
+    "Face": "Top",
+    "TextureContent": "rbxasset://textures/SpawnLocation.png"
+  }
+}

@@ -1,0 +1,27 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=827846 to learn about workspace recommendations.
+	// Extension identifier format: ${publisher}.${name}. Example: vscode.csharp
+	// List of extensions which should be recommended for users of this workspace.
+	"recommendations": [
+		// Essential Extensions
+		"johnnymorganz.luau-lsp",
+		"kampfkarren.selene-vscode",
+		"johnnymorganz.stylua",
+		"dervex.argon",
+		"thornhall.roblox-studio-like-syntax-highlighting",
+		// Useful Extensions
+		"gostrafx.lua-file-creator",
+		"ezzenix.roblox-asset-preview",
+		"ezzenix.auto-require-roblox",
+		"v-champion.nexus-sync",
+		"filiptibell.wally-utilities",
+		"icrawl.discord-vscode",
+		"adam-bender.commit-message-editor",
+		"howardzuo.vscode-git-tags",
+		// Optional Extensions
+		"d05dev.block-studio-theme",
+		"tanva2009.tanva-roblox-vanilla3-icons"
+	],
+	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
+	"unwantedRecommendations": []
+}
