@@ -40,3 +40,5 @@ DOCUMENTATION:
 RESPONSIBILITIES:
 - UncleTyrone (AKA myself) was responsible for the structure of the framework along with all of the feature-rich integrations such as threading, signal/connection management, and various useful library functions.
 - Vanguard was responsible for filling in the framework's modules and making use of the framework to construct a seamless UI system. He also had several key input factors that helped design and construct the flow of the framework.
+
+--]]
