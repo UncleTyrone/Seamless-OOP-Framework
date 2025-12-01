@@ -8,10 +8,6 @@
 
 # Artifacts
 /*.lock
-/*.rbxl
-/*.rbxlx
-/*.rbxm
-/*.rbxmx
 
 # Misc
 .DS_Store

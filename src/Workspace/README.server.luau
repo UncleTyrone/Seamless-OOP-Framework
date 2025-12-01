@@ -14,15 +14,14 @@ Please note that the server library has had the unnecessary UI tweening capabili
 
 Made with ❤️ by Vanguard & UncleTyrone!
 
---]]
 
 
 
+GITHUB REPOSITORY WITH FULL API DOCUMENTATION AND READABILITY:
+https://github.com/UncleTyrone/Seamless-OOP-Framework
 
 
 
-
---[[
 
 SEAMLESS OOP FRAMEWORK
 An OOP-oriented framework for Luau featuring seamless module handling and a custom library.
